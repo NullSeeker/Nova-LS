@@ -674,6 +674,7 @@ public:
 	char m_aWrongLogin[256];
 
 	int64_t m_LastWarning;
+	int64_t m_LastWeaponsCommandTick;
 	int m_ChilliWarnings;
 	bool m_TROLL166;
 	bool m_TROLL420;

@@ -2368,8 +2368,39 @@ void CGameContext::ConPracticeSetJumps(IConsole::IResult *pResult, void *pUserDa
 void CGameContext::ConPracticeWeapons(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
-	if(pSelf->GetPracticeCharacter(pResult))
-		ConWeapons(pResult, pUserData);
+	if(!CheckClientId(pResult->m_ClientId))
+		return;
+
+	CPlayer *pPlayer = pSelf->m_apPlayers[pResult->m_ClientId];
+	if(!pPlayer)
+		return;
+
+	CCharacter *pChr = pPlayer->GetCharacter();
+	if(!pChr)
+		return;
+
+	const int64_t NowTick = pSelf->Server()->Tick();
+	const int64_t CooldownTicks = (int64_t)pSelf->Server()->TickSpeed() * 10;
+	if(pPlayer->m_LastWeaponsCommandTick && pPlayer->m_LastWeaponsCommandTick + CooldownTicks > NowTick)
+	{
+		const int64_t Remaining = pPlayer->m_LastWeaponsCommandTick + CooldownTicks - NowTick;
+		const int SecondsLeft = (int)((Remaining + pSelf->Server()->TickSpeed() - 1) / pSelf->Server()->TickSpeed());
+		char aBuf[64];
+		str_format(aBuf, sizeof(aBuf), "Please wait %d seconds before using /weapons again.", SecondsLeft);
+		pSelf->SendChatTarget(pResult->m_ClientId, aBuf);
+		return;
+	}
+
+	const bool IsPractice = pSelf->m_pController->Teams().IsPractice(pSelf->GetDDRaceTeam(pResult->m_ClientId));
+	const bool IsVip = pPlayer->m_Account.m_IsSuperModerator || pPlayer->m_Account.m_IsModerator;
+	if(!IsPractice && !IsVip)
+	{
+		pSelf->SendChatTarget(pPlayer->GetCid(), "You're not in a team with /practice turned on. Note that you can't earn a rank with practice enabled.");
+		return;
+	}
+
+	pPlayer->m_LastWeaponsCommandTick = NowTick;
+	ConWeapons(pResult, pUserData);
 }
 
 void CGameContext::ConPracticeUnShotgun(IConsole::IResult *pResult, void *pUserData)
