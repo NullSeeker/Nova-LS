@@ -5,6 +5,7 @@
 #include "player.h"
 
 #include <base/system.h>
+#include <base/time.h>
 
 #include <engine/shared/config.h>
 #include <engine/shared/ddnetpp/loc.h>
@@ -42,6 +43,19 @@ void CPlayer::ConstructDDPP()
 		m_PendingCaptcha = true;
 		m_PendingJoinMessage = true;
 	}
+}
+
+bool CPlayer::IsVip() const
+{
+	if(m_Account.m_IsSuperModerator)
+		return true;
+	if(m_Account.m_IsModerator)
+		return true;
+	if(m_Account.m_VipUntil == 0)
+		return true;
+	if(m_Account.m_VipUntil < 0)
+		return false;
+	return time_timestamp() < m_Account.m_VipUntil;
 }
 
 void CPlayer::DestructDDPP()
@@ -130,7 +144,7 @@ void CPlayer::ResetDDPP()
 	m_TradeMoney = -1;
 	m_TradeId = -1;
 	m_SendExtraVoteMenuIndex = -1;
-	m_LastWeaponsCommandTick = 0;
+	m_NextVipWeaponsTick = 0;
 
 	//dbg_msg("debug", "init player showhide='%s'", m_Account.m_aShowHideConfig);
 	m_ShowBlockPoints = GameServer()->CharToBool(m_Account.m_aShowHideConfig[0]); //doing it manually because the gamecontext function cant be called here

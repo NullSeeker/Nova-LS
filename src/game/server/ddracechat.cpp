@@ -2375,32 +2375,24 @@ void CGameContext::ConPracticeWeapons(IConsole::IResult *pResult, void *pUserDat
 	if(!pPlayer)
 		return;
 
-	CCharacter *pChr = pPlayer->GetCharacter();
-	if(!pChr)
-		return;
-
-	const int64_t NowTick = pSelf->Server()->Tick();
-	const int64_t CooldownTicks = (int64_t)pSelf->Server()->TickSpeed() * 10;
-	if(pPlayer->m_LastWeaponsCommandTick && pPlayer->m_LastWeaponsCommandTick + CooldownTicks > NowTick)
+	if(!pPlayer->IsVip())
 	{
-		const int64_t Remaining = pPlayer->m_LastWeaponsCommandTick + CooldownTicks - NowTick;
-		const int SecondsLeft = (int)((Remaining + pSelf->Server()->TickSpeed() - 1) / pSelf->Server()->TickSpeed());
-		char aBuf[64];
+		pSelf->SendChatTarget(pResult->m_ClientId, "Missing permission.");
+		return;
+	}
+
+	if(pPlayer->m_NextVipWeaponsTick > pSelf->Server()->Tick())
+	{
+		const int SecondsLeft = (pPlayer->m_NextVipWeaponsTick - pSelf->Server()->Tick()) / pSelf->Server()->TickSpeed();
+		char aBuf[128];
 		str_format(aBuf, sizeof(aBuf), "Please wait %d seconds before using /weapons again.", SecondsLeft);
 		pSelf->SendChatTarget(pResult->m_ClientId, aBuf);
 		return;
 	}
 
-	const bool IsPractice = pSelf->m_pController->Teams().IsPractice(pSelf->GetDDRaceTeam(pResult->m_ClientId));
-	const bool IsVip = pPlayer->m_Account.m_IsSuperModerator || pPlayer->m_Account.m_IsModerator;
-	if(!IsPractice && !IsVip)
-	{
-		pSelf->SendChatTarget(pPlayer->GetCid(), "You're not in a team with /practice turned on. Note that you can't earn a rank with practice enabled.");
-		return;
-	}
-
-	pPlayer->m_LastWeaponsCommandTick = NowTick;
+	pPlayer->m_NextVipWeaponsTick = pSelf->Server()->Tick() + pSelf->Server()->TickSpeed() * 10;
 	ConWeapons(pResult, pUserData);
+	pSelf->SendChatTarget(pResult->m_ClientId, "You received all weapons. Cooldown: 10 seconds.");
 }
 
 void CGameContext::ConPracticeUnShotgun(IConsole::IResult *pResult, void *pUserData)
