@@ -48,6 +48,7 @@ void CAccountRconCmdResult::SetVariant(Variant v, const CSqlAdminCommandRequest 
 	case MODERATOR:
 	case SUPER_MODERATOR:
 	case SUPPORTER:
+	case VIP:
 	case DIRECT:
 	case ALL:
 		for(auto &aMessage : m_aaMessages)

@@ -277,6 +277,7 @@ struct CAccountRconCmdResult : ISqlResult
 		MODERATOR,
 		SUPER_MODERATOR,
 		SUPPORTER,
+		VIP,
 		LOG_ONLY,
 	} m_MessageKind;
 
